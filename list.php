@@ -20,22 +20,9 @@ $count = $pdo->query("SELECT COUNT(*) FROM $table_apps")->fetchColumn();
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Анкеты</title>
-    <style>
-        body { font-family: Arial; background: #f0f0f0; }
-        .container { max-width: 1200px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #7b1fa2; color: white; }
-        tr:hover { background: #f5f5f5; }
-        .badge { background: #7b1fa2; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; display: inline-block; margin: 2px; }
-        .nav { margin-top: 20px; }
-        .nav a { margin-right: 10px; color: #7b1fa2; }
-        .btn { background: #4caf50; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-danger { background: #f44336; }
-        .debug { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffc107; }
-        .debug strong { color: #856404; }
-    </style>
+    <link rel="stylesheet" href="style.css">  <!-- ЭТО ДОБАВИТЬ! -->
 </head>
 <body>
     <div class="container">

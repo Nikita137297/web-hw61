@@ -6,21 +6,9 @@ require_once 'config.php';
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Анкета</title>
-    <style>
-        body { font-family: Arial; background: #f0f0f0; }
-        .container { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn { background: #4caf50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .btn:hover { background: #388e3c; }
-        .error { color: red; font-size: 14px; }
-        .success { background: #d4edda; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-        .nav { margin-top: 20px; }
-        .nav a { margin-right: 10px; color: #7b1fa2; }
-        select[multiple] { min-height: 150px; }
-    </style>
+    <link rel="stylesheet" href="style.css">  <!-- ЭТО ДОБАВИТЬ! -->
 </head>
 <body>
     <div class="container">

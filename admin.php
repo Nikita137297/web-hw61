@@ -78,15 +78,9 @@ $count = $pdo->query("SELECT COUNT(*) FROM $table_apps")->fetchColumn();
         .admin-container .btn-back { background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; padding: 0.7rem 1.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block; transition: all 0.3s; }
         .admin-container .btn-back:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(76,175,80,0.3); }
         .admin-container h2 { color: #4a148c; }
-        .admin-login-form { max-width: 400px; margin: 0 auto; background: rgba(255,255,255,0.92); padding: 2.5rem; border-radius: 24px; box-shadow: 0 8px 40px rgba(123,31,162,0.1); border: 1px solid rgba(123,31,162,0.06); }
-        .admin-login-form h1 { text-align: center; color: #4a148c; margin-bottom: 1.5rem; }
-        .admin-login-form .btn { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: white; padding: 0.8rem; border: none; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s; }
-        .admin-login-form .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(123,31,162,0.3); }
-        .admin-login-form .error { color: #c2185b; text-align: center; margin-bottom: 1rem; }
-        .admin-login-form .form-group { margin-bottom: 1.2rem; }
-        .admin-login-form .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; color: #4a148c; }
-        .admin-login-form .form-group input { width: 100%; padding: 0.8rem 1rem; border: 2px solid #e1bee7; border-radius: 12px; font-size: 1rem; transition: all 0.3s; }
-        .admin-login-form .form-group input:focus { border-color: #7b1fa2; outline: none; box-shadow: 0 0 0 4px rgba(123,31,162,0.15); }
+        header { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: #fff; padding: 2.5rem 0; text-align: center; border-bottom: 5px solid #4caf50; }
+        footer { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: #fff; text-align: center; padding: 1.5rem 0; margin-top: 3rem; border-top: 5px solid #4caf50; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
     </style>
 </head>
 <body>
