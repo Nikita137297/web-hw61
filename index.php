@@ -19,6 +19,7 @@ require_once 'config.php';
         .success { background: #d4edda; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
         .nav { margin-top: 20px; }
         .nav a { margin-right: 10px; color: #7b1fa2; }
+        select[multiple] { min-height: 150px; }
     </style>
 </head>
 <body>
@@ -36,6 +37,10 @@ require_once 'config.php';
                 Логин: <?php echo $_GET['new_login']; ?><br>
                 Пароль: <?php echo $_GET['new_password']; ?>
             </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['updated'])): ?>
+            <div class="success">✅ Данные обновлены!</div>
         <?php endif; ?>
 
         <form action="process.php" method="GET">
@@ -102,6 +107,7 @@ require_once 'config.php';
         <div class="nav">
             <a href="list.php">📋 Анкеты</a>
             <a href="admin.php">👑 Админ-панель</a>
+            <a href="login.php">🔐 Вход</a>
         </div>
     </div>
 </body>

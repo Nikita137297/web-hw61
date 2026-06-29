@@ -11,11 +11,11 @@ try {
     die("Ошибка БД: " . $e->getMessage());
 }
 
-// ----- ТАБЛИЦЫ ДЛЯ 6-ГО ЗАДАНИЯ (с суффиксом _hw6) -----
-define('TABLE_APPLICATIONS', 'applications_hw6');
-define('TABLE_LANGUAGES', 'programming_languages_hw6');
-define('TABLE_APP_LANGS', 'application_languages_hw6');
-define('TABLE_ADMINS', 'admins_hw6');
+// ТАБЛИЦЫ ДЛЯ 6-ГО ЗАДАНИЯ
+$table_apps = 'applications_hw6';
+$table_langs = 'programming_languages_hw6';
+$table_app_langs = 'application_languages_hw6';
+$table_admins = 'admins_hw6';
 
 function authenticateAdmin() {
     if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW'])) {
@@ -23,9 +23,8 @@ function authenticateAdmin() {
         header('HTTP/1.0 401 Unauthorized');
         exit;
     }
-    global $pdo;
-    $table = TABLE_ADMINS;
-    $stmt = $pdo->prepare("SELECT password_hash FROM $table WHERE login = ?");
+    global $pdo, $table_admins;
+    $stmt = $pdo->prepare("SELECT password_hash FROM $table_admins WHERE login = ?");
     $stmt->execute([$_SERVER['PHP_AUTH_USER']]);
     $admin = $stmt->fetch();
     if (!$admin || !password_verify($_SERVER['PHP_AUTH_PW'], $admin['password_hash'])) {

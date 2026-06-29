@@ -1,19 +1,20 @@
 <?php
 require_once 'config.php';
 
-$tableApps = TABLE_APPLICATIONS;
-$tableAppLangs = TABLE_APP_LANGS;
-$tableLangs = TABLE_LANGUAGES;
+global $pdo, $table_apps, $table_app_langs, $table_langs;
 
 $stmt = $pdo->query("
     SELECT a.*, GROUP_CONCAT(pl.name) as languages 
-    FROM $tableApps a
-    LEFT JOIN $tableAppLangs al ON a.id = al.application_id
-    LEFT JOIN $tableLangs pl ON al.language_id = pl.id
+    FROM $table_apps a
+    LEFT JOIN $table_app_langs al ON a.id = al.application_id
+    LEFT JOIN $table_langs pl ON al.language_id = pl.id
     GROUP BY a.id
     ORDER BY a.created_at DESC
 ");
 $apps = $stmt->fetchAll();
+
+// Проверяем, есть ли записи
+$count = $pdo->query("SELECT COUNT(*) FROM $table_apps")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html>
@@ -32,15 +33,24 @@ $apps = $stmt->fetchAll();
         .nav a { margin-right: 10px; color: #7b1fa2; }
         .btn { background: #4caf50; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #f44336; }
+        .debug { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffc107; }
+        .debug strong { color: #856404; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📋 Анкеты (hw6)</h1>
-        <p>Всего: <?php echo count($apps); ?></p>
+        
+        <div class="debug">
+            <strong>Отладка:</strong> В таблице <strong><?php echo $table_apps; ?></strong> записей: <strong><?php echo $count; ?></strong>
+        </div>
+        
+        <p>Всего анкет: <?php echo count($apps); ?></p>
         
         <?php if (empty($apps)): ?>
-            <p>Нет анкет</p>
+            <p style="color:red;">❌ Нет анкет в таблице <?php echo $table_apps; ?></p>
+            <p>Проверьте, что вы заполнили форму и нажали "Сохранить".</p>
+            <p><a href="index.php">📝 Заполнить анкету</a></p>
         <?php else: ?>
             <table>
                 <tr>

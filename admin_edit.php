@@ -2,12 +2,10 @@
 require_once 'config.php';
 $adminLogin = authenticateAdmin();
 
-$tableApps = TABLE_APPLICATIONS;
-$tableAppLangs = TABLE_APP_LANGS;
-$tableLangs = TABLE_LANGUAGES;
+global $pdo, $table_apps, $table_app_langs, $table_langs;
 
 $id = (int)$_GET['id'];
-$app = $pdo->prepare("SELECT * FROM $tableApps WHERE id = ?");
+$app = $pdo->prepare("SELECT * FROM $table_apps WHERE id = ?");
 $app->execute([$id]);
 $app = $app->fetch();
 
@@ -26,13 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contract_accepted = isset($_POST['contract_accepted']) ? 1 : 0;
     $languages = $_POST['languages'] ?? [];
 
-    $sql = "UPDATE $tableApps SET full_name=?, phone=?, email=?, birth_date=?, gender=?, biography=?, contract_accepted=? WHERE id=?";
+    $sql = "UPDATE $table_apps SET full_name=?, phone=?, email=?, birth_date=?, gender=?, biography=?, contract_accepted=? WHERE id=?";
     $pdo->prepare($sql)->execute([$full_name, $phone, $email, $birth_date, $gender, $biography, $contract_accepted, $id]);
 
-    $pdo->prepare("DELETE FROM $tableAppLangs WHERE application_id = ?")->execute([$id]);
+    $pdo->prepare("DELETE FROM $table_app_langs WHERE application_id = ?")->execute([$id]);
     
-    $langStmt = $pdo->prepare("SELECT id FROM $tableLangs WHERE name = ?");
-    $linkStmt = $pdo->prepare("INSERT INTO $tableAppLangs (application_id, language_id) VALUES (?, ?)");
+    $langStmt = $pdo->prepare("SELECT id FROM $table_langs WHERE name = ?");
+    $linkStmt = $pdo->prepare("INSERT INTO $table_app_langs (application_id, language_id) VALUES (?, ?)");
     foreach ($languages as $lang) {
         $langStmt->execute([$lang]);
         $row = $langStmt->fetch();
@@ -43,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$userLangs = $pdo->prepare("SELECT pl.name FROM $tableAppLangs al JOIN $tableLangs pl ON al.language_id = pl.id WHERE al.application_id = ?");
+$userLangs = $pdo->prepare("SELECT pl.name FROM $table_app_langs al JOIN $table_langs pl ON al.language_id = pl.id WHERE al.application_id = ?");
 $userLangs->execute([$id]);
 $userLangs = $userLangs->fetchAll(PDO::FETCH_COLUMN);
 

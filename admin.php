@@ -2,26 +2,25 @@
 require_once 'config.php';
 $adminLogin = authenticateAdmin();
 
-$tableApps = TABLE_APPLICATIONS;
-$tableAppLangs = TABLE_APP_LANGS;
-$tableLangs = TABLE_LANGUAGES;
-$tableAdmins = TABLE_ADMINS;
+global $pdo, $table_apps, $table_app_langs, $table_langs;
 
 $stats = $pdo->query("
     SELECT pl.name, COUNT(al.application_id) as count 
-    FROM $tableLangs pl
-    LEFT JOIN $tableAppLangs al ON pl.id = al.language_id
+    FROM $table_langs pl
+    LEFT JOIN $table_app_langs al ON pl.id = al.language_id
     GROUP BY pl.id
 ")->fetchAll();
 
 $apps = $pdo->query("
     SELECT a.*, GROUP_CONCAT(pl.name) as languages 
-    FROM $tableApps a
-    LEFT JOIN $tableAppLangs al ON a.id = al.application_id
-    LEFT JOIN $tableLangs pl ON al.language_id = pl.id
+    FROM $table_apps a
+    LEFT JOIN $table_app_langs al ON a.id = al.application_id
+    LEFT JOIN $table_langs pl ON al.language_id = pl.id
     GROUP BY a.id
     ORDER BY a.created_at DESC
 ")->fetchAll();
+
+$count = $pdo->query("SELECT COUNT(*) FROM $table_apps")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html>
@@ -31,7 +30,7 @@ $apps = $pdo->query("
     <style>
         body { font-family: Arial; background: #f0f0f0; }
         .container { max-width: 1200px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; }
-        .header { display: flex; justify-content: space-between; align-items: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
         .stat { background: #f3e5f5; padding: 15px; border-radius: 10px; min-width: 100px; text-align: center; }
         .stat .num { font-size: 24px; font-weight: bold; color: #4a148c; }
@@ -43,6 +42,7 @@ $apps = $pdo->query("
         .btn-danger { background: #f44336; }
         .nav a { margin-right: 10px; color: #7b1fa2; }
         .admin-badge { background: #4caf50; color: white; padding: 5px 15px; border-radius: 20px; }
+        .debug { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffc107; }
     </style>
 </head>
 <body>
@@ -52,6 +52,10 @@ $apps = $pdo->query("
             <div>
                 <span class="admin-badge">✅ <?php echo htmlspecialchars($adminLogin); ?></span>
             </div>
+        </div>
+
+        <div class="debug">
+            <strong>Отладка:</strong> В таблице <strong><?php echo $table_apps; ?></strong> записей: <strong><?php echo $count; ?></strong>
         </div>
 
         <div class="stats">
@@ -68,6 +72,9 @@ $apps = $pdo->query("
         </div>
 
         <h2>Все анкеты</h2>
+        <?php if (empty($apps)): ?>
+            <p style="color:red;">❌ Нет анкет</p>
+        <?php else: ?>
         <table>
             <tr>
                 <th>ID</th>
@@ -99,6 +106,7 @@ $apps = $pdo->query("
             </tr>
             <?php endforeach; ?>
         </table>
+        <?php endif; ?>
 
         <div class="nav" style="margin-top:20px;">
             <a href="index.php">📝 Форма</a>
