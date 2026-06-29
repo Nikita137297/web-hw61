@@ -1,8 +1,6 @@
 <?php
 require_once 'config.php';
-// ВРЕМЕННО! Убираем проверку для теста
-// $adminLogin = authenticateAdmin();
-$adminLogin = 'admin (тестовый режим)';
+$adminLogin = authenticateAdmin();
 
 global $pdo, $table_apps, $table_app_langs, $table_langs;
 
