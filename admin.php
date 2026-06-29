@@ -1,6 +1,27 @@
 <?php
+session_start();
 require_once 'config.php';
-$adminLogin = authenticateAdmin();
+
+// HTTP-авторизация
+if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW'])) {
+    header('WWW-Authenticate: Basic realm="Admin Area"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo 'Требуется авторизация';
+    exit;
+}
+
+global $pdo, $table_admins;
+$stmt = $pdo->prepare("SELECT password_hash FROM $table_admins WHERE login = ?");
+$stmt->execute([$_SERVER['PHP_AUTH_USER']]);
+$admin = $stmt->fetch();
+if (!$admin || !password_verify($_SERVER['PHP_AUTH_PW'], $admin['password_hash'])) {
+    header('WWW-Authenticate: Basic realm="Admin Area"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo 'Неверный логин или пароль';
+    exit;
+}
+
+$adminLogin = $_SERVER['PHP_AUTH_USER'];
 
 global $pdo, $table_apps, $table_app_langs, $table_langs;
 
@@ -26,92 +47,137 @@ $count = $pdo->query("SELECT COUNT(*) FROM $table_apps")->fetchColumn();
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: Arial; background: #f0f0f0; }
-        .container { max-width: 1200px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
-        .stat { background: #f3e5f5; padding: 15px; border-radius: 10px; min-width: 100px; text-align: center; }
-        .stat .num { font-size: 24px; font-weight: bold; color: #4a148c; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #7b1fa2; color: white; }
-        .badge { background: #7b1fa2; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; display: inline-block; margin: 2px; }
-        .btn { background: #4caf50; color: white; padding: 5px 12px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; }
-        .btn-danger { background: #f44336; }
-        .nav a { margin-right: 10px; color: #7b1fa2; }
-        .admin-badge { background: #4caf50; color: white; padding: 5px 15px; border-radius: 20px; }
-        .debug { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffc107; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.92); padding: 1.2rem 2rem; border-radius: 20px; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid rgba(123,31,162,0.08); }
+        .admin-header .admin-badge { background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; padding: 0.3rem 1.2rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+        .stat-card { background: rgba(255,255,255,0.92); padding: 1.2rem; border-radius: 18px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(123,31,162,0.06); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-card .number { font-size: 2.2rem; font-weight: 700; color: #4a148c; }
+        .stat-card .label { color: #6a1b9a; font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem; }
+        .stat-card .lang-bar { margin-top: 0.6rem; height: 6px; background: #e1bee7; border-radius: 10px; overflow: hidden; }
+        .stat-card .lang-bar .fill { height: 100%; background: linear-gradient(90deg, #7b1fa2, #4a148c); border-radius: 10px; transition: width 0.8s ease; }
+        .table-wrapper { overflow-x: auto; background: rgba(255,255,255,0.92); border-radius: 20px; padding: 1.2rem; box-shadow: 0 8px 40px rgba(123,31,162,0.06); border: 1px solid rgba(123,31,162,0.06); }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .admin-table th { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: white; padding: 0.8rem 1rem; text-align: left; font-weight: 600; }
+        .admin-table th:first-child { border-radius: 12px 0 0 0; }
+        .admin-table th:last-child { border-radius: 0 12px 0 0; }
+        .admin-table td { padding: 0.8rem 1rem; border-bottom: 1px solid #f3e5f5; vertical-align: middle; }
+        .admin-table tr:hover { background: #f3e5f5; }
+        .admin-table .badge { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: white; padding: 0.2rem 0.7rem; border-radius: 50px; font-size: 0.7rem; display: inline-block; margin: 0.1rem; }
+        .btn-admin-edit { background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; padding: 0.3rem 0.8rem; border-radius: 30px; text-decoration: none; font-size: 0.75rem; display: inline-block; transition: all 0.3s; }
+        .btn-admin-edit:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(76,175,80,0.3); }
+        .btn-admin-delete { background: linear-gradient(135deg, #e91e63, #c2185b); color: white; padding: 0.3rem 0.8rem; border-radius: 30px; text-decoration: none; font-size: 0.75rem; display: inline-block; border: none; cursor: pointer; transition: all 0.3s; }
+        .btn-admin-delete:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(233,30,99,0.3); }
+        .empty-state { text-align: center; padding: 3rem; color: #6a1b9a; }
+        .admin-container h3 { color: #4a148c; margin-bottom: 1rem; }
+        .admin-container .btn-back { background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; padding: 0.7rem 1.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block; transition: all 0.3s; }
+        .admin-container .btn-back:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(76,175,80,0.3); }
+        .admin-container h2 { color: #4a148c; }
+        .admin-login-form { max-width: 400px; margin: 0 auto; background: rgba(255,255,255,0.92); padding: 2.5rem; border-radius: 24px; box-shadow: 0 8px 40px rgba(123,31,162,0.1); border: 1px solid rgba(123,31,162,0.06); }
+        .admin-login-form h1 { text-align: center; color: #4a148c; margin-bottom: 1.5rem; }
+        .admin-login-form .btn { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: white; padding: 0.8rem; border: none; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s; }
+        .admin-login-form .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(123,31,162,0.3); }
+        .admin-login-form .error { color: #c2185b; text-align: center; margin-bottom: 1rem; }
+        .admin-login-form .form-group { margin-bottom: 1.2rem; }
+        .admin-login-form .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; color: #4a148c; }
+        .admin-login-form .form-group input { width: 100%; padding: 0.8rem 1rem; border: 2px solid #e1bee7; border-radius: 12px; font-size: 1rem; transition: all 0.3s; }
+        .admin-login-form .form-group input:focus { border-color: #7b1fa2; outline: none; box-shadow: 0 0 0 4px rgba(123,31,162,0.15); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>👑 Админ-панель (hw6)</h1>
+    <header>
+        <div class="container">
+            <h1>📡 Программно-аппаратные средства Web</h1>
+            <p class="student-info">👑 Админ-панель</p>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <div class="admin-header">
             <div>
-                <span class="admin-badge">✅ <?php echo htmlspecialchars($adminLogin); ?></span>
+                <span style="font-size:1.8rem;">👑</span>
+                <span style="font-weight:600; font-size:1.1rem; margin-left:0.5rem;">Администратор</span>
+                <span class="admin-badge" style="margin-left:1rem;">✅ <?php echo htmlspecialchars($adminLogin); ?></span>
+            </div>
+            <div>
+                <a href="index.php" class="btn-back" style="margin-right:0.5rem;">📝 Форма</a>
+                <a href="list.php" class="btn-back">📋 Анкеты</a>
             </div>
         </div>
 
-        <div class="debug">
-            <strong>Отладка:</strong> В таблице <strong><?php echo $table_apps; ?></strong> записей: <strong><?php echo $count; ?></strong>
-        </div>
-
-        <div class="stats">
-            <div class="stat">
-                <div class="num"><?php echo count($apps); ?></div>
-                <div>Всего анкет</div>
+        <h3 style="color:#4a148c; margin-bottom:1rem;">📊 Статистика</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number"><?php echo count($apps); ?></div>
+                <div class="label">Всего анкет</div>
             </div>
             <?php foreach ($stats as $s): ?>
-            <div class="stat">
-                <div class="num"><?php echo $s['count']; ?></div>
-                <div><?php echo htmlspecialchars($s['name']); ?></div>
+            <div class="stat-card">
+                <div class="number" style="font-size:1.8rem;"><?php echo $s['count']; ?></div>
+                <div class="label"><?php echo htmlspecialchars($s['name']); ?></div>
+                <div class="lang-bar">
+                    <div class="fill" style="width: <?php echo $count > 0 ? ($s['count'] / $count * 100) : 0; ?>%;"></div>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <h2>Все анкеты</h2>
-        <?php if (empty($apps)): ?>
-            <p style="color:red;">❌ Нет анкет</p>
-        <?php else: ?>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>ФИО</th>
-                <th>Телефон</th>
-                <th>Email</th>
-                <th>Языки</th>
-                <th>Действия</th>
-            </tr>
-            <?php foreach ($apps as $app): ?>
-            <tr>
-                <td><?php echo $app['id']; ?></td>
-                <td><?php echo htmlspecialchars($app['full_name']); ?></td>
-                <td><?php echo htmlspecialchars($app['phone']); ?></td>
-                <td><?php echo htmlspecialchars($app['email']); ?></td>
-                <td>
-                    <?php 
-                    $langs = explode(',', $app['languages'] ?? '');
-                    foreach ($langs as $lang): 
-                        if (trim($lang)):
-                    ?>
-                        <span class="badge"><?php echo trim($lang); ?></span>
-                    <?php endif; endforeach; ?>
-                </td>
-                <td>
-                    <a href="admin_edit.php?id=<?php echo $app['id']; ?>" class="btn">✏️</a>
-                    <a href="admin_delete.php?id=<?php echo $app['id']; ?>" class="btn btn-danger" onclick="return confirm('Удалить?')">🗑️</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-        <?php endif; ?>
-
-        <div class="nav" style="margin-top:20px;">
-            <a href="index.php">📝 Форма</a>
-            <a href="list.php">📋 Анкеты</a>
+        <h3 style="color:#4a148c; margin-bottom:1rem;">📋 Все анкеты</h3>
+        <div class="table-wrapper">
+            <?php if (empty($apps)): ?>
+                <div class="empty-state">
+                    <p style="font-size:1.5rem;">😕 Нет анкет</p>
+                    <p style="color:#7b5a8a;">Пока никто не заполнил форму</p>
+                </div>
+            <?php else: ?>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ФИО</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th>Языки</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($apps as $app): ?>
+                    <tr>
+                        <td style="font-weight:600; color:#4a148c;"><?php echo $app['id']; ?></td>
+                        <td><strong><?php echo htmlspecialchars($app['full_name']); ?></strong></td>
+                        <td><?php echo htmlspecialchars($app['phone']); ?></td>
+                        <td><?php echo htmlspecialchars($app['email']); ?></td>
+                        <td>
+                            <?php 
+                            $langs = explode(',', $app['languages'] ?? '');
+                            foreach ($langs as $lang): 
+                                if (trim($lang)):
+                            ?>
+                                <span class="badge"><?php echo trim($lang); ?></span>
+                            <?php endif; endforeach; ?>
+                        </td>
+                        <td style="white-space:nowrap;">
+                            <a href="admin_edit.php?id=<?php echo $app['id']; ?>" class="btn-admin-edit">✏️ Редактировать</a>
+                            <a href="admin_delete.php?id=<?php echo $app['id']; ?>" class="btn-admin-delete" onclick="return confirm('Удалить анкету №<?php echo $app['id']; ?>?')">🗑️ Удалить</a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
         </div>
-    </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Лабораторная работа №6 — Админ-панель | Май 2026</p>
+        </div>
+    </footer>
 </body>
 </html>
